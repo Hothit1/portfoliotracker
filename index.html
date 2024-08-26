@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Portfolio Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div id="app" class="container mx-auto max-w-4xl">
+        <h1 class="text-4xl font-bold mb-8 text-center text-white">Crypto Portfolio Tracker</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div id="portfolioSummary" class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
+                <h2 class="text-2xl font-semibold mb-4">Your Portfolio</h2>
+                <p id="totalValue" class="text-3xl font-bold text-green-600">$0.00</p>
+            </div>
+            <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
+                <canvas id="portfolioChart"></canvas>
+            </div>
+        </div>
+        <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6 mb-8">
+            <h3 class="text-xl font-semibold mb-4">Add Custom Cryptocurrency</h3>
+            <div class="flex items-center">
+                <input type="text" id="cryptoSearch" placeholder="Search for a cryptocurrency" class="flex-grow px-4 py-2 border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="searchCrypto()" class="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600">Search</button>
+            </div>
+            <div id="searchResults" class="mt-4"></div>
+        </div>
+        <div id="cryptoTable" class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
+            <p class="text-center text-gray-600 mb-4">Loading...</p>
+        </div>
+        <p class="text-center mt-6 text-sm text-white opacity-75">Data from CoinGecko API. Refresh for updates.</p>
+    </div>
+
+    <script>
+        let cryptoData = [];
+        let portfolio = {};
+        let chart;
+
+        window.onload = function() {
+            loadPortfolio();
+            fetchCryptoData();
+        };
+
+        function loadPortfolio() {
+            const savedPortfolio = localStorage.getItem('cryptoPortfolio');
+            if (savedPortfolio) {
+                portfolio = JSON.parse(savedPortfolio);
+            }
+        }
+
+        function savePortfolio() {
+            localStorage.setItem('cryptoPortfolio', JSON.stringify(portfolio));
+        }
+
+        async function fetchCryptoData() {
+            try {
+                const response = await axios.get('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=5&page=1&sparkline=false');
+                cryptoData = response.data;
+                
+                // Fetch data for custom cryptocurrencies in the portfolio
+                for (let cryptoId in portfolio) {
+                    if (!cryptoData.some(crypto => crypto.id === cryptoId)) {
+                        try {
+                            const customCryptoResponse = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}`);
+                            const customCryptoData = customCryptoResponse.data;
+                            cryptoData.push({
+                                id: customCryptoData.id,
+                                symbol: customCryptoData.symbol,
+                                name: customCryptoData.name,
+                                image: customCryptoData.image.small,
+                                current_price: customCryptoData.market_data.current_price.usd,
+                                price_change_percentage_24h: customCryptoData.market_data.price_change_percentage_24h,
+                                market_cap: customCryptoData.market_data.market_cap.usd
+                            });
+                        } catch (error) {
+                            console.error(`Failed to fetch data for ${cryptoId}:`, error);
+                        }
+                    }
+                }
+                
+                renderTable();
+                updatePortfolioValue();
+                updateChart();
+            } catch (error) {
+                document.getElementById('cryptoTable').innerHTML = `<p class="text-red-500 text-center">Error: ${error.message}. Please try refreshing the page.</p>`;
+            }
+        }
+
+        function renderTable() {
+            const tableHTML = `
+                <table class="min-w-full">
+                    <thead class="bg-gray-200 text-gray-700">
+                        <tr>
+                            <th class="py-3 px-4 text-left rounded-tl-lg">Name</th>
+                            <th class="py-3 px-4 text-left">Price (USD)</th>
+                            <th class="py-3 px-4 text-left">24h Change</th>
+                            <th class="py-3 px-4 text-left">Holdings</th>
+                            <th class="py-3 px-4 text-left rounded-tr-lg">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cryptoData.map((crypto, index) => `
+                            <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150">
+                                <td class="py-4 px-4">
+                                    <div class="flex items-center">
+                                        <img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8 mr-3 rounded-full">
+                                        <div>
+                                            <div class="font-semibold">${crypto.name}</div>
+                                            <div class="text-sm text-gray-500">${crypto.symbol.toUpperCase()}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4 font-semibold">$${crypto.current_price.toLocaleString()}</td>
+                                <td class="py-4 px-4">
+                                    <span class="px-2 py-1 rounded ${crypto.price_change_percentage_24h > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                        ${crypto.price_change_percentage_24h > 0 ? '↑' : '↓'} ${Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
+                                    </span>
+                                </td>
+                                <td class="py-4 px-4">${portfolio[crypto.id] || 0}</td>
+                                <td class="py-4 px-4">
+                                    <input type="number" id="input-${crypto.id}" placeholder="Amount" class="w-20 px-2 py-1 border rounded mr-2">
+                                    <button onclick="updateHoldings('${crypto.id}')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Update</button>
+                                    <button onclick="removeCrypto('${crypto.id}')" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 ml-2">Remove</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('cryptoTable').innerHTML = tableHTML;
+        }
+
+        function updateHoldings(cryptoId) {
+            const inputElement = document.getElementById(`input-${cryptoId}`);
+            const amount = parseFloat(inputElement.value);
+            if (!isNaN(amount) && amount >= 0) {
+                portfolio[cryptoId] = amount;
+                savePortfolio();
+                renderTable();
+                updatePortfolioValue();
+                updateChart();
+            } else {
+                alert('Please enter a valid number');
+            }
+        }
+
+        function updatePortfolioValue() {
+            let totalValue = 0;
+            for (let crypto of cryptoData) {
+                const holdings = portfolio[crypto.id] || 0;
+                totalValue += holdings * crypto.current_price;
+            }
+            document.getElementById('totalValue').textContent = `$${totalValue.toLocaleString()}`;
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            const data = cryptoData.map(crypto => ({
+                name: crypto.name,
+                value: (portfolio[crypto.id] || 0) * crypto.current_price
+            })).filter(item => item.value > 0);
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.map(item => item.name),
+                    datasets: [{
+                        data: data.map(item => item.value),
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                            '#FF9F40', '#FF6384', '#C9CBCF', '#7BC225', '#36A2EB'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Portfolio Distribution'
+                        }
+                    }
+                }
+            });
+        }
+
+        async function searchCrypto() {
+            const searchTerm = document.getElementById('cryptoSearch').value;
+            if (searchTerm) {
+                try {
+                    const response = await axios.get(`https://api.coingecko.com/api/v3/search?query=${searchTerm}`);
+                    const results = response.data.coins.slice(0, 5);  // Limit to top 5 results
+                    renderSearchResults(results);
+                } catch (error) {
+                    console.error('Search failed:', error);
+                    document.getElementById('searchResults').innerHTML = '<p class="text-red-500">Search failed. Please try again.</p>';
+                }
+            }
+        }
+
+        function renderSearchResults(results) {
+            const resultsHTML = results.map(coin => `
+                <div class="flex items-center justify-between p-2 border-b">
+                    <div class="flex items-center">
+                        <img src="${coin.thumb}" alt="${coin.name}" class="w-6 h-6 mr-2">
+                        <span>${coin.name} (${coin.symbol})</span>
+                    </div>
+                    <button onclick="addCrypto('${coin.id}')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Add</button>
+                </div>
+            `).join('');
+            document.getElementById('searchResults').innerHTML = resultsHTML;
+        }
+
+        async function addCrypto(cryptoId) {
+            try {
+                const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}`);
+                const newCrypto = {
+                    id: response.data.id,
+                    symbol: response.data.symbol,
+                    name: response.data.name,
+                    image: response.data.image.small,
+                    current_price: response.data.market_data.current_price.usd,
+                    price_change_percentage_24h: response.data.market_data.price_change_percentage_24h,
+                    market_cap: response.data.market_data.market_cap.usd
+                };
+                
+                if (!cryptoData.some(crypto => crypto.id === newCrypto.id)) {
+                    cryptoData.push(newCrypto);
+                    renderTable();
+                    updatePortfolioValue();
+                    updateChart();
+                }
+                
+                document.getElementById('searchResults').innerHTML = '';
+                document.getElementById('cryptoSearch').value = '';
+            } catch (error) {
+                console.error('Failed to add cryptocurrency:', error);
+                alert('Failed to add cryptocurrency. Please try again.');
+            }
+        }
+
+        function removeCrypto(cryptoId) {
+            cryptoData = cryptoData.filter(crypto => crypto.id !== cryptoId);
+            delete portfolio[cryptoId];
+            savePortfolio();
+            renderTable();
+            updatePortfolioValue();
+            updateChart();
+        }
+    </script>
+</body>
+</html>
