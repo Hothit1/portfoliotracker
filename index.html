@@ -33,7 +33,7 @@
                 <div class="flex items-center justify-center">
                     <p id="totalValue" class="text-3xl font-bold text-green-600">$0.00</p>
                     <button onclick="toggleTotalValue()" class="ml-4 bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400">
-                        Hide
+                        Show <!-- Updated initial button text to "Show" -->
                     </button>
                 </div>
                 <div class="mt-4">
@@ -87,18 +87,20 @@
                         <th class="py-3 px-4 text-left">Portfolio %</th>
                         <th class="py-3 px-4 text-left">Target Price (USD)</th>
                         <th class="py-3 px-4 text-left">Predicted Value</th>
+                        <th class="py-3 px-4 text-left">Predicted Market Cap</th> <!-- Re-added Predicted Market Cap Column -->
                         <th class="py-3 px-4 text-left rounded-tr-lg">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="cryptoTableBody">
                     <tr>
-                        <td colspan="8" class="text-center text-gray-600">Loading...</td> <!-- Updated colspan -->
+                        <td colspan="9" class="text-center text-gray-600">Loading...</td> <!-- Updated colspan -->
                     </tr>
                 </tbody>
                 <tfoot class="bg-gray-200 text-gray-700">
                     <tr>
                         <td colspan="5" class="py-3 px-4 text-right font-semibold">Total Predicted Value:</td>
                         <td colspan="2" class="py-3 px-4 font-semibold" id="totalPredictedValue">$0.00</td>
+                        <td></td> <!-- Removed Total Predicted Market Cap from footer -->
                         <td></td>
                     </tr>
                 </tfoot>
@@ -113,7 +115,7 @@
         let targetPrices = {}; // To store target prices for each crypto
         let chart;
         let targetValue = 1000000; // Default target of 1M
-        let isTotalValueHidden = false; // State for hiding/showing total value
+        let isTotalValueHidden = true; // Set to true by default to hide the total value
 
         window.onload = function() {
             loadPortfolio();
@@ -200,6 +202,12 @@
                 renderTable();
                 updatePortfolioValue();
                 updateChart();
+                updateProgressBar();
+
+                // After rendering, set the total value as hidden
+                updatePortfolioValue(); // This will set it to '****' based on isTotalValueHidden = true
+                const toggleButton = document.querySelector('#portfolioSummary button');
+                toggleButton.textContent = 'Show'; // Ensure the button says 'Show' initially
             } catch (error) {
                 console.error('Failed to initialize default cryptocurrencies:', error);
             }
@@ -354,10 +362,12 @@
                 const percentage = totalValue > 0 ? (value / totalValue * 100).toFixed(2) : '0.00';
                 const targetPrice = targetPrices[crypto.id] || '';
                 const predictedValue = holdings * (targetPrice || crypto.current_price);
+                const predictedMarketCap = (targetPrice || crypto.current_price) * crypto.circulating_supply;
 
                 totalPredictedValue += predictedValue;
 
                 const formattedPredictedValue = predictedValue !== 0 ? `$${formatPrice(predictedValue)}` : '$0.00';
+                const formattedPredictedMarketCap = predictedMarketCap !== 0 ? `$${formatPrice(predictedMarketCap)}` : '$0.00';
 
                 const row = document.createElement('tr');
                 row.className = `${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150`;
@@ -385,6 +395,7 @@
                         <button onclick="updateTargetPrice('${crypto.id}')" class="bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 text-sm">Set</button>
                     </td>
                     <td class="py-4 px-4">${formattedPredictedValue}</td>
+                    <td class="py-4 px-4">${formattedPredictedMarketCap}</td> <!-- Predicted Market Cap -->
                     <td class="py-4 px-4">
                         <input type="number" step="any" id="input-${crypto.id}" placeholder="Amount" class="w-20 px-2 py-1 border rounded mr-2">
                         <button onclick="updateHoldings('${crypto.id}')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Update</button>
@@ -432,7 +443,7 @@
             if (!isNaN(target) && target > 0) {
                 targetPrices[cryptoId] = target;
                 saveTargetPrices();
-                renderTable(); // Re-render to update predicted value
+                renderTable(); // Re-render to update predicted value and market cap
             } else {
                 alert('Please enter a valid target price');
             }
