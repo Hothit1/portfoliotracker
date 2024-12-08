@@ -14,43 +14,217 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        /* Optional: Adjust table font size for better fit */
+        table {
+            font-size: 0.875rem; /* Tailwind's text-sm */
+        }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
-    <div id="app" class="container mx-auto max-w-4xl">
+    <div id="app" class="container mx-auto max-w-6xl"> <!-- Increased max-width for better table fit -->
         <h1 class="text-4xl font-bold mb-8 text-center text-white">Crypto Portfolio Tracker</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div id="portfolioSummary" class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
                 <h2 class="text-2xl font-semibold mb-4">Your Portfolio</h2>
-                <p id="totalValue" class="text-3xl font-bold text-green-600">$0.00</p>
+                <!-- Toggle Total Value Visibility -->
+                <div class="flex items-center justify-center">
+                    <p id="totalValue" class="text-3xl font-bold text-green-600">$0.00</p>
+                    <button onclick="toggleTotalValue()" class="ml-4 bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400">
+                        Hide
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700">Target Value:</label>
+                    <div class="flex items-center mt-2">
+                        <input type="number" id="targetValue" value="1000000" class="w-32 px-2 py-1 border rounded mr-2">
+                        <button onclick="updateTarget()" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Set Target</button>
+                    </div>
+                    <div class="mt-4">
+                        <div class="relative pt-1">
+                            <div class="flex mb-2 items-center justify-between">
+                                <div>
+                                    <span id="progressPercentage" class="text-xs font-semibold inline-block text-blue-600">0%</span>
+                                </div>
+                                <div class="text-right">
+                                    <span id="remainingValue" class="text-xs font-semibold inline-block text-blue-600">Remaining: $0</span>
+                                </div>
+                            </div>
+                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                                <div id="progressBar" class="progress-bar shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="refreshPrices()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Refresh Prices
+                </button>
             </div>
             <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
                 <canvas id="portfolioChart"></canvas>
             </div>
         </div>
+        <!-- Add New Coin Section -->
         <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6 mb-8">
-            <h3 class="text-xl font-semibold mb-4">Add Custom Cryptocurrency</h3>
-            <div class="flex items-center">
-                <input type="text" id="cryptoSearch" placeholder="Search for a cryptocurrency" class="flex-grow px-4 py-2 border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button onclick="searchCrypto()" class="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600">Search</button>
+            <h2 class="text-2xl font-semibold mb-4">Add New Coin</h2>
+            <div class="flex flex-col md:flex-row items-center">
+                <input type="text" id="newCoinId" placeholder="Enter Coin ID (e.g., ethereum)" class="w-full md:w-1/2 px-3 py-2 border rounded mr-4 mb-4 md:mb-0">
+                <button onclick="addNewCoin()" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">Add Coin</button>
             </div>
-            <div id="searchResults" class="mt-4"></div>
+            <p class="mt-2 text-sm text-gray-600">* Use CoinGecko Coin ID (e.g., "bitcoin", "ethereum"). <a href="https://www.coingecko.com/en" target="_blank" class="text-blue-500 underline">Find Coin IDs here</a>.</p>
         </div>
-        <div id="cryptoTable" class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
-            <p class="text-center text-gray-600 mb-4">Loading...</p>
+        <!-- Wrap the table in a div with horizontal scrolling -->
+        <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6 overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-200 text-gray-700">
+                    <tr>
+                        <th class="py-3 px-4 text-left rounded-tl-lg">Name</th>
+                        <th class="py-3 px-4 text-left">Price (USD)</th>
+                        <th class="py-3 px-4 text-left">24h Change</th>
+                        <th class="py-3 px-4 text-left">Holdings</th>
+                        <th class="py-3 px-4 text-left">Portfolio %</th>
+                        <th class="py-3 px-4 text-left">Target Price (USD)</th>
+                        <th class="py-3 px-4 text-left">Predicted Value</th>
+                        <th class="py-3 px-4 text-left rounded-tr-lg">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="cryptoTableBody">
+                    <tr>
+                        <td colspan="8" class="text-center text-gray-600">Loading...</td> <!-- Updated colspan -->
+                    </tr>
+                </tbody>
+                <tfoot class="bg-gray-200 text-gray-700">
+                    <tr>
+                        <td colspan="5" class="py-3 px-4 text-right font-semibold">Total Predicted Value:</td>
+                        <td colspan="2" class="py-3 px-4 font-semibold" id="totalPredictedValue">$0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
-        <p class="text-center mt-6 text-sm text-white opacity-75">Data from CoinGecko API. Refresh for updates.</p>
+        <p class="text-center mt-6 text-sm text-white opacity-75">Data from CoinGecko API. Click Refresh Prices for updates.</p>
     </div>
 
     <script>
         let cryptoData = [];
         let portfolio = {};
+        let targetPrices = {}; // To store target prices for each crypto
         let chart;
+        let targetValue = 1000000; // Default target of 1M
+        let isTotalValueHidden = false; // State for hiding/showing total value
 
         window.onload = function() {
             loadPortfolio();
-            fetchCryptoData();
+            loadTarget();
+            loadTargetPrices(); // Load target prices from localStorage
+            loadAddedCoins(); // Load user-added coins from localStorage
+            initializeDefaultCryptos();
         };
+
+        // Load user-added coins from localStorage
+        function loadAddedCoins() {
+            const savedAddedCoins = localStorage.getItem('addedCoins');
+            if (savedAddedCoins) {
+                const addedCoins = JSON.parse(savedAddedCoins);
+                addedCoins.forEach(coinId => {
+                    fetchAndAddCoin(coinId);
+                });
+            }
+        }
+
+        // Save user-added coins to localStorage
+        function saveAddedCoins() {
+            const addedCoins = cryptoData.map(crypto => crypto.id);
+            localStorage.setItem('addedCoins', JSON.stringify(addedCoins));
+        }
+
+        function loadTargetPrices() {
+            const savedTargetPrices = localStorage.getItem('targetPrices');
+            if (savedTargetPrices) {
+                targetPrices = JSON.parse(savedTargetPrices);
+            }
+        }
+
+        function saveTargetPrices() {
+            localStorage.setItem('targetPrices', JSON.stringify(targetPrices));
+        }
+
+        function toggleTotalValue() {
+            isTotalValueHidden = !isTotalValueHidden;
+            const totalValueElement = document.getElementById('totalValue');
+            const toggleButton = document.querySelector('#portfolioSummary button');
+            if (isTotalValueHidden) {
+                totalValueElement.textContent = '****';
+                toggleButton.textContent = 'Show';
+            } else {
+                updatePortfolioValue();
+                toggleButton.textContent = 'Hide';
+            }
+        }
+
+        function loadTarget() {
+            const savedTarget = localStorage.getItem('targetValue');
+            if (savedTarget) {
+                targetValue = parseFloat(savedTarget);
+                document.getElementById('targetValue').value = targetValue;
+            }
+        }
+
+        function updateTarget() {
+            const newTarget = parseFloat(document.getElementById('targetValue').value);
+            if (!isNaN(newTarget) && newTarget > 0) {
+                targetValue = newTarget;
+                localStorage.setItem('targetValue', targetValue);
+                updateProgressBar();
+            }
+        }
+
+        function updateProgressBar() {
+            const totalValue = calculateTotalValue();
+            const percentage = (totalValue / targetValue) * 100;
+            const remaining = targetValue - totalValue;
+
+            document.getElementById('progressBar').style.width = `${Math.min(100, percentage)}%`;
+            document.getElementById('progressPercentage').textContent = `${percentage.toFixed(1)}%`;
+            document.getElementById('remainingValue').textContent = `Remaining: $${remaining.toLocaleString()}`;
+        }
+
+        async function initializeDefaultCryptos() {
+            const defaultCryptos = ['bitcoin', 'pepe', 'hyperliquid'];
+            try {
+                for (const cryptoId of defaultCryptos) {
+                    await fetchAndAddCoin(cryptoId);
+                }
+                renderTable();
+                updatePortfolioValue();
+                updateChart();
+            } catch (error) {
+                console.error('Failed to initialize default cryptocurrencies:', error);
+            }
+        }
+
+        // Function to fetch coin data and add to cryptoData
+        async function fetchAndAddCoin(cryptoId) {
+            try {
+                const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}`);
+                const cryptoDataResponse = response.data;
+                addCryptoToData({
+                    id: cryptoDataResponse.id,
+                    symbol: cryptoDataResponse.symbol,
+                    name: cryptoDataResponse.name,
+                    image: cryptoDataResponse.image.small,
+                    current_price: cryptoDataResponse.market_data.current_price.usd,
+                    price_change_percentage_24h: cryptoDataResponse.market_data.price_change_percentage_24h,
+                    market_cap: cryptoDataResponse.market_data.market_cap.usd,
+                    circulating_supply: cryptoDataResponse.market_data.circulating_supply
+                });
+            } catch (error) {
+                console.error(`Failed to fetch data for coin ID "${cryptoId}":`, error);
+                alert(`Failed to add coin "${cryptoId}". Please ensure the Coin ID is correct.`);
+            }
+        }
 
         function loadPortfolio() {
             const savedPortfolio = localStorage.getItem('cryptoPortfolio');
@@ -63,82 +237,178 @@
             localStorage.setItem('cryptoPortfolio', JSON.stringify(portfolio));
         }
 
-        async function fetchCryptoData() {
+        function calculateTotalValue() {
+            return cryptoData.reduce((total, crypto) => {
+                const holdings = portfolio[crypto.id] || 0;
+                return total + (holdings * crypto.current_price);
+            }, 0);
+        }
+
+        function calculateTotalPredictedValue() {
+            return cryptoData.reduce((sum, crypto) => {
+                const holdings = portfolio[crypto.id] || 0;
+                const targetPrice = targetPrices[crypto.id] || crypto.current_price;
+                return sum + (holdings * targetPrice);
+            }, 0);
+        }
+
+        async function refreshPrices() {
+            const refreshButton = document.querySelector('button[onclick="refreshPrices()"]');
+            refreshButton.disabled = true;
+            refreshButton.textContent = 'Refreshing...';
+
             try {
-                const response = await axios.get('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=5&page=1&sparkline=false');
-                cryptoData = response.data;
-                
-                // Fetch data for custom cryptocurrencies in the portfolio
-                for (let cryptoId in portfolio) {
-                    if (!cryptoData.some(crypto => crypto.id === cryptoId)) {
-                        try {
-                            const customCryptoResponse = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}`);
-                            const customCryptoData = customCryptoResponse.data;
-                            cryptoData.push({
-                                id: customCryptoData.id,
-                                symbol: customCryptoData.symbol,
-                                name: customCryptoData.name,
-                                image: customCryptoData.image.small,
-                                current_price: customCryptoData.market_data.current_price.usd,
-                                price_change_percentage_24h: customCryptoData.market_data.price_change_percentage_24h,
-                                market_cap: customCryptoData.market_data.market_cap.usd
-                            });
-                        } catch (error) {
-                            console.error(`Failed to fetch data for ${cryptoId}:`, error);
-                        }
-                    }
+                for (let crypto of cryptoData) {
+                    const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${crypto.id}`);
+                    crypto.current_price = response.data.market_data.current_price.usd;
+                    crypto.price_change_percentage_24h = response.data.market_data.price_change_percentage_24h;
+                    crypto.circulating_supply = response.data.market_data.circulating_supply;
                 }
-                
                 renderTable();
                 updatePortfolioValue();
                 updateChart();
+                updateProgressBar();
             } catch (error) {
-                document.getElementById('cryptoTable').innerHTML = `<p class="text-red-500 text-center">Error: ${error.message}. Please try refreshing the page.</p>`;
+                console.error('Failed to refresh prices:', error);
+                alert('Failed to refresh prices. Please try again.');
+            } finally {
+                refreshButton.disabled = false;
+                refreshButton.textContent = 'Refresh Prices';
             }
         }
 
+        function addCryptoToData(crypto) {
+            if (!cryptoData.some(c => c.id === crypto.id)) {
+                cryptoData.push(crypto);
+            }
+        }
+
+        // Function to add a new coin via user input
+        async function addNewCoin() {
+            const newCoinIdInput = document.getElementById('newCoinId');
+            const cryptoId = newCoinIdInput.value.trim().toLowerCase();
+
+            if (!cryptoId) {
+                alert('Please enter a valid Coin ID.');
+                return;
+            }
+
+            // Check if the coin already exists in the portfolio
+            if (cryptoData.some(c => c.id === cryptoId)) {
+                alert('Coin already exists in your portfolio.');
+                return;
+            }
+
+            // Fetch and add the new coin
+            await fetchAndAddCoin(cryptoId);
+
+            // Save the added coin
+            saveAddedCoins();
+
+            // Clear the input field
+            newCoinIdInput.value = '';
+
+            // Update the table and chart
+            renderTable();
+            updatePortfolioValue();
+            updateChart();
+            updateProgressBar();
+        }
+
+        // Function to remove a coin from the portfolio
+        function removeCoin(cryptoId) {
+            const confirmation = confirm('Are you sure you want to remove this coin from your portfolio?');
+            if (!confirmation) return;
+
+            // Remove the coin from cryptoData
+            cryptoData = cryptoData.filter(crypto => crypto.id !== cryptoId);
+
+            // Remove the coin from portfolio and targetPrices
+            delete portfolio[cryptoId];
+            delete targetPrices[cryptoId];
+
+            // Update localStorage for portfolio and targetPrices
+            savePortfolio();
+            saveTargetPrices();
+
+            // Update addedCoins in localStorage
+            saveAddedCoins();
+
+            // Re-render the table and chart
+            renderTable();
+            updatePortfolioValue();
+            updateChart();
+            updateProgressBar();
+        }
+
         function renderTable() {
-            const tableHTML = `
-                <table class="min-w-full">
-                    <thead class="bg-gray-200 text-gray-700">
-                        <tr>
-                            <th class="py-3 px-4 text-left rounded-tl-lg">Name</th>
-                            <th class="py-3 px-4 text-left">Price (USD)</th>
-                            <th class="py-3 px-4 text-left">24h Change</th>
-                            <th class="py-3 px-4 text-left">Holdings</th>
-                            <th class="py-3 px-4 text-left rounded-tr-lg">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${cryptoData.map((crypto, index) => `
-                            <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150">
-                                <td class="py-4 px-4">
-                                    <div class="flex items-center">
-                                        <img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8 mr-3 rounded-full">
-                                        <div>
-                                            <div class="font-semibold">${crypto.name}</div>
-                                            <div class="text-sm text-gray-500">${crypto.symbol.toUpperCase()}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-4 font-semibold">$${crypto.current_price.toLocaleString()}</td>
-                                <td class="py-4 px-4">
-                                    <span class="px-2 py-1 rounded ${crypto.price_change_percentage_24h > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                        ${crypto.price_change_percentage_24h > 0 ? '↑' : '↓'} ${Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
-                                    </span>
-                                </td>
-                                <td class="py-4 px-4">${portfolio[crypto.id] || 0}</td>
-                                <td class="py-4 px-4">
-                                    <input type="number" id="input-${crypto.id}" placeholder="Amount" class="w-20 px-2 py-1 border rounded mr-2">
-                                    <button onclick="updateHoldings('${crypto.id}')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Update</button>
-                                    <button onclick="removeCrypto('${crypto.id}')" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 ml-2">Remove</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            document.getElementById('cryptoTable').innerHTML = tableHTML;
+            const tbody = document.getElementById('cryptoTableBody');
+            tbody.innerHTML = ''; // Clear existing rows
+
+            let totalPredictedValue = 0;
+
+            cryptoData.forEach((crypto, index) => {
+                const holdings = portfolio[crypto.id] || 0;
+                const value = holdings * crypto.current_price;
+                const totalValue = calculateTotalValue();
+                const percentage = totalValue > 0 ? (value / totalValue * 100).toFixed(2) : '0.00';
+                const targetPrice = targetPrices[crypto.id] || '';
+                const predictedValue = holdings * (targetPrice || crypto.current_price);
+
+                totalPredictedValue += predictedValue;
+
+                const formattedPredictedValue = predictedValue !== 0 ? `$${formatPrice(predictedValue)}` : '$0.00';
+
+                const row = document.createElement('tr');
+                row.className = `${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150`;
+
+                row.innerHTML = `
+                    <td class="py-4 px-4">
+                        <div class="flex items-center">
+                            <img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8 mr-3 rounded-full">
+                            <div>
+                                <div class="font-semibold">${crypto.name}</div>
+                                <div class="text-sm text-gray-500">${crypto.symbol.toUpperCase()}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 font-semibold">${formatPrice(crypto.current_price)}</td>
+                    <td class="py-4 px-4">
+                        <span class="px-2 py-1 rounded ${crypto.price_change_percentage_24h > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${crypto.price_change_percentage_24h > 0 ? '↑' : '↓'} ${Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
+                        </span>
+                    </td>
+                    <td class="py-4 px-4">${holdings}</td>
+                    <td class="py-4 px-4">${percentage}%</td>
+                    <td class="py-4 px-4">
+                        <input type="number" step="any" id="target-${crypto.id}" value="${targetPrice}" placeholder="e.g., 0.05" class="w-24 px-2 py-1 border rounded mr-2">
+                        <button onclick="updateTargetPrice('${crypto.id}')" class="bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 text-sm">Set</button>
+                    </td>
+                    <td class="py-4 px-4">${formattedPredictedValue}</td>
+                    <td class="py-4 px-4">
+                        <input type="number" step="any" id="input-${crypto.id}" placeholder="Amount" class="w-20 px-2 py-1 border rounded mr-2">
+                        <button onclick="updateHoldings('${crypto.id}')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Update</button>
+                        <button onclick="removeCoin('${crypto.id}')" class="ml-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Remove</button> <!-- Remove Button -->
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Update the total predicted value in the footer
+            document.getElementById('totalPredictedValue').textContent = `$${formatPrice(totalPredictedValue)}`;
+        }
+
+        // Function to format prices, showing more decimals for small values
+        function formatPrice(price) {
+            if (price < 0.0001) {
+                return price.toFixed(8);
+            } else if (price < 0.01) {
+                return price.toFixed(6);
+            } else if (price < 1) {
+                return price.toFixed(4);
+            } else {
+                return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
         }
 
         function updateHoldings(cryptoId) {
@@ -150,18 +420,32 @@
                 renderTable();
                 updatePortfolioValue();
                 updateChart();
+                updateProgressBar();
             } else {
                 alert('Please enter a valid number');
             }
         }
 
-        function updatePortfolioValue() {
-            let totalValue = 0;
-            for (let crypto of cryptoData) {
-                const holdings = portfolio[crypto.id] || 0;
-                totalValue += holdings * crypto.current_price;
+        function updateTargetPrice(cryptoId) {
+            const inputElement = document.getElementById(`target-${cryptoId}`);
+            const target = parseFloat(inputElement.value);
+            if (!isNaN(target) && target > 0) {
+                targetPrices[cryptoId] = target;
+                saveTargetPrices();
+                renderTable(); // Re-render to update predicted value
+            } else {
+                alert('Please enter a valid target price');
             }
-            document.getElementById('totalValue').textContent = `$${totalValue.toLocaleString()}`;
+        }
+
+        function updatePortfolioValue() {
+            const totalValue = calculateTotalValue();
+            const totalValueElement = document.getElementById('totalValue');
+            if (isTotalValueHidden) {
+                totalValueElement.textContent = '****';
+            } else {
+                totalValueElement.textContent = `$${formatPrice(totalValue)}`;
+            }
         }
 
         function updateChart() {
@@ -200,70 +484,6 @@
                     }
                 }
             });
-        }
-
-        async function searchCrypto() {
-            const searchTerm = document.getElementById('cryptoSearch').value;
-            if (searchTerm) {
-                try {
-                    const response = await axios.get(`https://api.coingecko.com/api/v3/search?query=${searchTerm}`);
-                    const results = response.data.coins.slice(0, 5);  // Limit to top 5 results
-                    renderSearchResults(results);
-                } catch (error) {
-                    console.error('Search failed:', error);
-                    document.getElementById('searchResults').innerHTML = '<p class="text-red-500">Search failed. Please try again.</p>';
-                }
-            }
-        }
-
-        function renderSearchResults(results) {
-            const resultsHTML = results.map(coin => `
-                <div class="flex items-center justify-between p-2 border-b">
-                    <div class="flex items-center">
-                        <img src="${coin.thumb}" alt="${coin.name}" class="w-6 h-6 mr-2">
-                        <span>${coin.name} (${coin.symbol})</span>
-                    </div>
-                    <button onclick="addCrypto('${coin.id}')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Add</button>
-                </div>
-            `).join('');
-            document.getElementById('searchResults').innerHTML = resultsHTML;
-        }
-
-        async function addCrypto(cryptoId) {
-            try {
-                const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}`);
-                const newCrypto = {
-                    id: response.data.id,
-                    symbol: response.data.symbol,
-                    name: response.data.name,
-                    image: response.data.image.small,
-                    current_price: response.data.market_data.current_price.usd,
-                    price_change_percentage_24h: response.data.market_data.price_change_percentage_24h,
-                    market_cap: response.data.market_data.market_cap.usd
-                };
-                
-                if (!cryptoData.some(crypto => crypto.id === newCrypto.id)) {
-                    cryptoData.push(newCrypto);
-                    renderTable();
-                    updatePortfolioValue();
-                    updateChart();
-                }
-                
-                document.getElementById('searchResults').innerHTML = '';
-                document.getElementById('cryptoSearch').value = '';
-            } catch (error) {
-                console.error('Failed to add cryptocurrency:', error);
-                alert('Failed to add cryptocurrency. Please try again.');
-            }
-        }
-
-        function removeCrypto(cryptoId) {
-            cryptoData = cryptoData.filter(crypto => crypto.id !== cryptoId);
-            delete portfolio[cryptoId];
-            savePortfolio();
-            renderTable();
-            updatePortfolioValue();
-            updateChart();
         }
     </script>
 </body>
