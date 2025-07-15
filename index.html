@@ -7,136 +7,167 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
         .progress-bar {
             transition: width 0.5s ease-in-out;
         }
-        /* Optional: Adjust table font size for better fit */
-        table {
-            font-size: 0.875rem; /* Tailwind's text-sm */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .table-glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        th, td {
+            color: #E5E7EB; /* Lighter text for dark bg */
+        }
+        thead {
+             background: rgba(255, 255, 255, 0.15) !important;
+        }
+         tbody tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+        }
+        tfoot {
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+        ::placeholder {
+            color: #D1D5DB;
+        }
+        input {
+            background-color: rgba(0,0,0,0.2);
+            border-color: rgba(255,255,255,0.2);
         }
     </style>
 </head>
-<body class="flex items-center justify-center p-4">
-    <div id="app" class="container mx-auto max-w-6xl"> <!-- Increased max-width for better table fit -->
-        <h1 class="text-4xl font-bold mb-8 text-center text-white">Crypto Portfolio Tracker</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div id="portfolioSummary" class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
-                <h2 class="text-2xl font-semibold mb-4">Your Portfolio</h2>
-                <!-- Toggle Total Value Visibility -->
+<body class="flex items-center justify-center p-4 text-white">
+    <div id="app" class="container mx-auto max-w-6xl">
+        <h1 class="text-4xl font-bold mb-8 text-center text-white tracking-wide">Crypto Portfolio Tracker</h1>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div id="portfolioSummary" class="glass-card rounded-xl shadow-2xl p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-white">Your Portfolio</h2>
                 <div class="flex items-center justify-center">
-                    <p id="totalValue" class="text-3xl font-bold text-green-600">$0.00</p>
-                    <button onclick="toggleTotalValue()" class="ml-4 bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400">
-                        Show <!-- Updated initial button text to "Show" -->
+                    <p id="totalValue" class="text-3xl font-bold text-green-400">$0.00</p>
+                    <button onclick="toggleTotalValue()" class="ml-4 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
+                        Show
                     </button>
                 </div>
                 <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700">Target Value:</label>
+                    <label class="block text-sm font-medium text-gray-200">Target Value:</label>
                     <div class="flex items-center mt-2">
                         <input type="number" id="targetValue" value="1000000" class="w-32 px-2 py-1 border rounded mr-2">
-                        <button onclick="updateTarget()" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Set Target</button>
+                        <button onclick="updateTarget()" class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition">Set Target</button>
                     </div>
                     <div class="mt-4">
                         <div class="relative pt-1">
                             <div class="flex mb-2 items-center justify-between">
-                                <div>
-                                    <span id="progressPercentage" class="text-xs font-semibold inline-block text-blue-600">0%</span>
-                                </div>
-                                <div class="text-right">
-                                    <span id="remainingValue" class="text-xs font-semibold inline-block text-blue-600">Remaining: $0</span>
-                                </div>
+                                <div><span id="progressPercentage" class="text-xs font-semibold inline-block text-blue-300">0%</span></div>
+                                <div class="text-right"><span id="remainingValue" class="text-xs font-semibold inline-block text-blue-300">Remaining: $0</span></div>
                             </div>
-                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200/50">
                                 <div id="progressBar" class="progress-bar shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <button onclick="refreshPrices()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                    Refresh Prices
-                </button>
+                 <div class="flex items-center mt-4">
+                    <button onclick="manualRefresh()" id="refreshButton" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition flex items-center">
+                        <svg id="refreshSpinner" class="spinner h-5 w-5 mr-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.95-4.95l.05.05M20 15a9 9 0 01-14.95 4.95l-.05-.05"></path></svg>
+                        Refresh Prices
+                    </button>
+                    <p id="lastUpdated" class="ml-4 text-sm text-gray-300">Last updated: Never</p>
+                </div>
             </div>
-            <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6">
+            <div class="glass-card rounded-xl shadow-2xl p-6 flex items-center justify-center">
                 <canvas id="portfolioChart"></canvas>
             </div>
         </div>
-        <!-- Add New Coin Section -->
-        <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6 mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Add New Coin</h2>
+        <div class="glass-card rounded-xl shadow-2xl p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Add New Coin</h2>
             <div class="flex flex-col md:flex-row items-center">
-                <input type="text" id="newCoinId" placeholder="Enter Coin ID (e.g., ethereum)" class="w-full md:w-1/2 px-3 py-2 border rounded mr-4 mb-4 md:mb-0">
-                <button onclick="addNewCoin()" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">Add Coin</button>
+                <input type="text" id="newCoinId" placeholder="Enter Coin ID (e.g., solana)" class="w-full md:w-1/2 px-3 py-2 border rounded mr-4 mb-4 md:mb-0">
+                <button onclick="addNewCoin()" class="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition w-full md:w-auto">Add Coin</button>
             </div>
-            <p class="mt-2 text-sm text-gray-600">* Use CoinGecko Coin ID (e.g., "bitcoin", "ethereum"). <a href="https://www.coingecko.com/en" target="_blank" class="text-blue-500 underline">Find Coin IDs here</a>.</p>
+            <p class="mt-2 text-sm text-gray-300">* Use CoinGecko Coin ID (e.g., "bitcoin", "ethereum"). <a href="https://www.coingecko.com/en" target="_blank" class="text-blue-400 underline">Find Coin IDs here</a>.</p>
         </div>
-        <!-- Wrap the table in a div with horizontal scrolling -->
-        <div class="bg-white bg-opacity-90 rounded-xl shadow-2xl p-6 overflow-x-auto">
+        <div class="table-glass rounded-xl shadow-2xl p-6 overflow-x-auto">
             <table class="min-w-full">
-                <thead class="bg-gray-200 text-gray-700">
+                <thead class="text-gray-300">
                     <tr>
                         <th class="py-3 px-4 text-left rounded-tl-lg">Name</th>
                         <th class="py-3 px-4 text-left">Price (USD)</th>
                         <th class="py-3 px-4 text-left">24h Change</th>
                         <th class="py-3 px-4 text-left">Holdings</th>
                         <th class="py-3 px-4 text-left">Portfolio %</th>
-                        <th class="py-3 px-4 text-left">Target Price (USD)</th>
+                        <th class="py-3 px-4 text-left">Target Price</th>
                         <th class="py-3 px-4 text-left">Predicted Value</th>
-                        <th class="py-3 px-4 text-left">Predicted Market Cap</th> <!-- Re-added Predicted Market Cap Column -->
+                        <th class="py-3 px-4 text-left">Predicted Mkt Cap</th>
                         <th class="py-3 px-4 text-left rounded-tr-lg">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="cryptoTableBody">
                     <tr>
-                        <td colspan="9" class="text-center text-gray-600">Loading...</td> <!-- Updated colspan -->
+                        <td colspan="9" class="text-center py-10">
+                             <div class="flex justify-center items-center">
+                                <svg class="spinner h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.95-4.95l.05.05M20 15a9 9 0 01-14.95 4.95l-.05-.05"></path></svg>
+                                <span class="ml-4 text-lg">Loading Initial Data...</span>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
-                <tfoot class="bg-gray-200 text-gray-700">
+                <tfoot class="text-gray-300">
                     <tr>
                         <td colspan="5" class="py-3 px-4 text-right font-semibold">Total Predicted Value:</td>
                         <td colspan="2" class="py-3 px-4 font-semibold" id="totalPredictedValue">$0.00</td>
-                        <td></td> <!-- Removed Total Predicted Market Cap from footer -->
+                        <td></td>
                         <td></td>
                     </tr>
                 </tfoot>
             </table>
         </div>
-        <p class="text-center mt-6 text-sm text-white opacity-75">Data from CoinGecko API. Click Refresh Prices for updates.</p>
+        <p class="text-center mt-6 text-sm text-white opacity-75">Data from CoinGecko. Auto-refreshes every 60 seconds.</p>
     </div>
 
     <script>
         let cryptoData = [];
         let portfolio = {};
-        let targetPrices = {}; // To store target prices for each crypto
+        let targetPrices = {};
         let chart;
-        let targetValue = 1000000; // Default target of 1M
-        let isTotalValueHidden = true; // Set to true by default to hide the total value
+        let targetValue = 1000000;
+        let isTotalValueHidden = true;
+        const REFRESH_INTERVAL = 60000; // 60 seconds
 
         window.onload = function() {
             loadPortfolio();
             loadTarget();
-            loadTargetPrices(); // Load target prices from localStorage
-            loadAddedCoins(); // Load user-added coins from localStorage
-            initializeDefaultCryptos();
+            loadTargetPrices();
+            initializeDefaultCryptos(); // This will load saved coins as well
+            setInterval(refreshPrices, REFRESH_INTERVAL); // Auto-refresh prices
         };
 
-        // Load user-added coins from localStorage
         function loadAddedCoins() {
             const savedAddedCoins = localStorage.getItem('addedCoins');
-            if (savedAddedCoins) {
-                const addedCoins = JSON.parse(savedAddedCoins);
-                addedCoins.forEach(coinId => {
-                    fetchAndAddCoin(coinId);
-                });
-            }
+            return savedAddedCoins ? JSON.parse(savedAddedCoins) : [];
         }
 
-        // Save user-added coins to localStorage
         function saveAddedCoins() {
             const addedCoins = cryptoData.map(crypto => crypto.id);
             localStorage.setItem('addedCoins', JSON.stringify(addedCoins));
@@ -144,9 +175,7 @@
 
         function loadTargetPrices() {
             const savedTargetPrices = localStorage.getItem('targetPrices');
-            if (savedTargetPrices) {
-                targetPrices = JSON.parse(savedTargetPrices);
-            }
+            if (savedTargetPrices) targetPrices = JSON.parse(savedTargetPrices);
         }
 
         function saveTargetPrices() {
@@ -155,15 +184,9 @@
 
         function toggleTotalValue() {
             isTotalValueHidden = !isTotalValueHidden;
-            const totalValueElement = document.getElementById('totalValue');
             const toggleButton = document.querySelector('#portfolioSummary button');
-            if (isTotalValueHidden) {
-                totalValueElement.textContent = '****';
-                toggleButton.textContent = 'Show';
-            } else {
-                updatePortfolioValue();
-                toggleButton.textContent = 'Hide';
-            }
+            toggleButton.textContent = isTotalValueHidden ? 'Show' : 'Hide';
+            updatePortfolioValue();
         }
 
         function loadTarget() {
@@ -186,48 +209,48 @@
         function updateProgressBar() {
             const totalValue = calculateTotalValue();
             const percentage = (totalValue / targetValue) * 100;
-            const remaining = targetValue - totalValue;
-
+            const remaining = targetValue > totalValue ? targetValue - totalValue : 0;
             document.getElementById('progressBar').style.width = `${Math.min(100, percentage)}%`;
-            document.getElementById('progressPercentage').textContent = `${percentage.toFixed(1)}%`;
-            document.getElementById('remainingValue').textContent = `Remaining: $${remaining.toLocaleString()}`;
+            document.getElementById('progressPercentage').textContent = `${percentage.toFixed(2)}%`;
+            document.getElementById('remainingValue').textContent = `Remaining: $${remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         }
 
         async function initializeDefaultCryptos() {
             const defaultCryptos = ['bitcoin', 'pepe', 'hyperliquid'];
-            try {
-                for (const cryptoId of defaultCryptos) {
-                    await fetchAndAddCoin(cryptoId);
-                }
-                renderTable();
-                updatePortfolioValue();
-                updateChart();
-                updateProgressBar();
+            const savedCoins = loadAddedCoins();
+            // Use Set to ensure unique coin IDs
+            const uniqueCoinIds = new Set([...defaultCryptos, ...savedCoins]);
 
-                // After rendering, set the total value as hidden
-                updatePortfolioValue(); // This will set it to '****' based on isTotalValueHidden = true
-                const toggleButton = document.querySelector('#portfolioSummary button');
-                toggleButton.textContent = 'Show'; // Ensure the button says 'Show' initially
+            try {
+                // Fetch all coins in parallel for faster loading
+                await Promise.all([...uniqueCoinIds].map(id => fetchAndAddCoin(id, false)));
+                updateUI();
+                
+                // Set initial hidden state for total value
+                document.getElementById('totalValue').textContent = '****';
+                document.querySelector('#portfolioSummary button').textContent = 'Show';
             } catch (error) {
-                console.error('Failed to initialize default cryptocurrencies:', error);
+                console.error('Failed to initialize cryptocurrencies:', error);
+                document.getElementById('cryptoTableBody').innerHTML = `<td colspan="9" class="text-center text-red-400 py-10">Failed to load coin data. Please check your connection and refresh.</td>`;
             }
         }
 
-        // Function to fetch coin data and add to cryptoData
-        async function fetchAndAddCoin(cryptoId) {
+        async function fetchAndAddCoin(cryptoId, shouldUpdateUI = true) {
+             if (cryptoData.some(c => c.id === cryptoId)) return; // Avoid duplicates
             try {
                 const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}`);
-                const cryptoDataResponse = response.data;
-                addCryptoToData({
-                    id: cryptoDataResponse.id,
-                    symbol: cryptoDataResponse.symbol,
-                    name: cryptoDataResponse.name,
-                    image: cryptoDataResponse.image.small,
-                    current_price: cryptoDataResponse.market_data.current_price.usd,
-                    price_change_percentage_24h: cryptoDataResponse.market_data.price_change_percentage_24h,
-                    market_cap: cryptoDataResponse.market_data.market_cap.usd,
-                    circulating_supply: cryptoDataResponse.market_data.circulating_supply
+                const data = response.data;
+                cryptoData.push({
+                    id: data.id,
+                    symbol: data.symbol,
+                    name: data.name,
+                    image: data.image.small,
+                    current_price: data.market_data.current_price.usd,
+                    price_change_percentage_24h: data.market_data.price_change_percentage_24h,
+                    market_cap: data.market_data.market_cap.usd,
+                    circulating_supply: data.market_data.circulating_supply
                 });
+                if (shouldUpdateUI) updateUI();
             } catch (error) {
                 console.error(`Failed to fetch data for coin ID "${cryptoId}":`, error);
                 alert(`Failed to add coin "${cryptoId}". Please ensure the Coin ID is correct.`);
@@ -236,113 +259,69 @@
 
         function loadPortfolio() {
             const savedPortfolio = localStorage.getItem('cryptoPortfolio');
-            if (savedPortfolio) {
-                portfolio = JSON.parse(savedPortfolio);
-            }
+            if (savedPortfolio) portfolio = JSON.parse(savedPortfolio);
         }
 
         function savePortfolio() {
             localStorage.setItem('cryptoPortfolio', JSON.stringify(portfolio));
         }
 
-        function calculateTotalValue() {
-            return cryptoData.reduce((total, crypto) => {
-                const holdings = portfolio[crypto.id] || 0;
-                return total + (holdings * crypto.current_price);
-            }, 0);
-        }
-
-        function calculateTotalPredictedValue() {
-            return cryptoData.reduce((sum, crypto) => {
-                const holdings = portfolio[crypto.id] || 0;
-                const targetPrice = targetPrices[crypto.id] || crypto.current_price;
-                return sum + (holdings * targetPrice);
-            }, 0);
+        const calculateTotalValue = () => cryptoData.reduce((total, crypto) => total + (portfolio[crypto.id] || 0) * crypto.current_price, 0);
+        const calculateTotalPredictedValue = () => cryptoData.reduce((sum, crypto) => sum + (portfolio[crypto.id] || 0) * (targetPrices[crypto.id] || crypto.current_price), 0);
+        
+        function manualRefresh() {
+             refreshPrices();
         }
 
         async function refreshPrices() {
-            const refreshButton = document.querySelector('button[onclick="refreshPrices()"]');
+            const spinner = document.getElementById('refreshSpinner');
+            const refreshButton = document.getElementById('refreshButton');
+            spinner.classList.remove('hidden');
             refreshButton.disabled = true;
-            refreshButton.textContent = 'Refreshing...';
 
             try {
-                for (let crypto of cryptoData) {
+                await Promise.all(cryptoData.map(async (crypto) => {
                     const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${crypto.id}`);
-                    crypto.current_price = response.data.market_data.current_price.usd;
-                    crypto.price_change_percentage_24h = response.data.market_data.price_change_percentage_24h;
-                    crypto.circulating_supply = response.data.market_data.circulating_supply;
-                }
-                renderTable();
-                updatePortfolioValue();
-                updateChart();
-                updateProgressBar();
+                    const data = response.data.market_data;
+                    crypto.current_price = data.current_price.usd;
+                    crypto.price_change_percentage_24h = data.price_change_percentage_24h;
+                    crypto.circulating_supply = data.circulating_supply;
+                    crypto.market_cap = data.market_cap.usd;
+                }));
+                document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                updateUI();
             } catch (error) {
                 console.error('Failed to refresh prices:', error);
-                alert('Failed to refresh prices. Please try again.');
+                alert('Failed to refresh prices. API limit might be reached. Please try again later.');
             } finally {
+                spinner.classList.add('hidden');
                 refreshButton.disabled = false;
-                refreshButton.textContent = 'Refresh Prices';
             }
         }
-
-        function addCryptoToData(crypto) {
-            if (!cryptoData.some(c => c.id === crypto.id)) {
-                cryptoData.push(crypto);
-            }
-        }
-
-        // Function to add a new coin via user input
+        
         async function addNewCoin() {
-            const newCoinIdInput = document.getElementById('newCoinId');
-            const cryptoId = newCoinIdInput.value.trim().toLowerCase();
-
-            if (!cryptoId) {
-                alert('Please enter a valid Coin ID.');
-                return;
-            }
-
-            // Check if the coin already exists in the portfolio
-            if (cryptoData.some(c => c.id === cryptoId)) {
-                alert('Coin already exists in your portfolio.');
-                return;
-            }
-
-            // Fetch and add the new coin
+            const input = document.getElementById('newCoinId');
+            const cryptoId = input.value.trim().toLowerCase();
+            if (!cryptoId) return alert('Please enter a valid Coin ID.');
+            if (cryptoData.some(c => c.id === cryptoId)) return alert('Coin already exists.');
+            
             await fetchAndAddCoin(cryptoId);
-
-            // Save the added coin
             saveAddedCoins();
-
-            // Clear the input field
-            newCoinIdInput.value = '';
-
-            // Update the table and chart
-            renderTable();
-            updatePortfolioValue();
-            updateChart();
-            updateProgressBar();
+            input.value = '';
         }
 
-        // Function to remove a coin from the portfolio
         function removeCoin(cryptoId) {
-            const confirmation = confirm('Are you sure you want to remove this coin from your portfolio?');
-            if (!confirmation) return;
-
-            // Remove the coin from cryptoData
-            cryptoData = cryptoData.filter(crypto => crypto.id !== cryptoId);
-
-            // Remove the coin from portfolio and targetPrices
+            if (!confirm(`Are you sure you want to remove this coin?`)) return;
+            cryptoData = cryptoData.filter(c => c.id !== cryptoId);
             delete portfolio[cryptoId];
             delete targetPrices[cryptoId];
-
-            // Update localStorage for portfolio and targetPrices
             savePortfolio();
             saveTargetPrices();
-
-            // Update addedCoins in localStorage
             saveAddedCoins();
-
-            // Re-render the table and chart
+            updateUI();
+        }
+        
+        function updateUI() {
             renderTable();
             updatePortfolioValue();
             updateChart();
@@ -351,75 +330,46 @@
 
         function renderTable() {
             const tbody = document.getElementById('cryptoTableBody');
-            tbody.innerHTML = ''; // Clear existing rows
+            if (cryptoData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-10">Your portfolio is empty. Add a coin to get started!</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = ''; 
 
-            let totalPredictedValue = 0;
+            const totalValue = calculateTotalValue();
 
-            cryptoData.forEach((crypto, index) => {
+            cryptoData.forEach(crypto => {
                 const holdings = portfolio[crypto.id] || 0;
                 const value = holdings * crypto.current_price;
-                const totalValue = calculateTotalValue();
                 const percentage = totalValue > 0 ? (value / totalValue * 100).toFixed(2) : '0.00';
                 const targetPrice = targetPrices[crypto.id] || '';
                 const predictedValue = holdings * (targetPrice || crypto.current_price);
                 const predictedMarketCap = (targetPrice || crypto.current_price) * crypto.circulating_supply;
-
-                totalPredictedValue += predictedValue;
-
-                const formattedPredictedValue = predictedValue !== 0 ? `$${formatPrice(predictedValue)}` : '$0.00';
-                const formattedPredictedMarketCap = predictedMarketCap !== 0 ? `$${formatPrice(predictedMarketCap)}` : '$0.00';
+                const change_24h = crypto.price_change_percentage_24h || 0;
 
                 const row = document.createElement('tr');
-                row.className = `${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150`;
-
+                row.className = 'hover:bg-white/10 transition-colors duration-150';
                 row.innerHTML = `
-                    <td class="py-4 px-4">
-                        <div class="flex items-center">
-                            <img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8 mr-3 rounded-full">
-                            <div>
-                                <div class="font-semibold">${crypto.name}</div>
-                                <div class="text-sm text-gray-500">${crypto.symbol.toUpperCase()}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="py-4 px-4 font-semibold">${formatPrice(crypto.current_price)}</td>
-                    <td class="py-4 px-4">
-                        <span class="px-2 py-1 rounded ${crypto.price_change_percentage_24h > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                            ${crypto.price_change_percentage_24h > 0 ? '↑' : '↓'} ${Math.abs(crypto.price_change_percentage_24h).toFixed(2)}%
-                        </span>
-                    </td>
-                    <td class="py-4 px-4">${holdings}</td>
+                    <td class="py-4 px-4"><div class="flex items-center"><img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8 mr-3 rounded-full"><div class="font-medium">${crypto.name}<div class="text-sm text-gray-400">${crypto.symbol.toUpperCase()}</div></div></div></td>
+                    <td class="py-4 px-4 font-semibold">$${formatPrice(crypto.current_price)}</td>
+                    <td class="py-4 px-4"><span class="px-2 py-1 text-sm rounded ${change_24h >= 0 ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}">${change_24h >= 0 ? '▲' : '▼'} ${Math.abs(change_24h).toFixed(2)}%</span></td>
+                    <td class="py-4 px-4">${holdings.toLocaleString()}</td>
                     <td class="py-4 px-4">${percentage}%</td>
-                    <td class="py-4 px-4">
-                        <input type="number" step="any" id="target-${crypto.id}" value="${targetPrice}" placeholder="e.g., 0.05" class="w-24 px-2 py-1 border rounded mr-2">
-                        <button onclick="updateTargetPrice('${crypto.id}')" class="bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 text-sm">Set</button>
-                    </td>
-                    <td class="py-4 px-4">${formattedPredictedValue}</td>
-                    <td class="py-4 px-4">${formattedPredictedMarketCap}</td> <!-- Predicted Market Cap -->
-                    <td class="py-4 px-4">
-                        <input type="number" step="any" id="input-${crypto.id}" placeholder="Amount" class="w-20 px-2 py-1 border rounded mr-2">
-                        <button onclick="updateHoldings('${crypto.id}')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Update</button>
-                        <button onclick="removeCoin('${crypto.id}')" class="ml-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Remove</button> <!-- Remove Button -->
-                    </td>
+                    <td class="py-4 px-4"><div class="flex items-center"><input type="number" step="any" id="target-${crypto.id}" value="${targetPrice}" placeholder="e.g., 80000" class="w-24 px-2 py-1 border rounded mr-2"><button onclick="updateTargetPrice('${crypto.id}')" class="bg-purple-500 text-white p-1 rounded hover:bg-purple-600 text-xs" title="Set Target Price">✔️</button></div></td>
+                    <td class="py-4 px-4">$${formatPrice(predictedValue)}</td>
+                    <td class="py-4 px-4">$${formatPrice(predictedMarketCap)}</td>
+                    <td class="py-4 px-4"><div class="flex items-center"><input type="number" step="any" id="input-${crypto.id}" placeholder="Amount" class="w-20 px-2 py-1 border rounded mr-2"><button onclick="updateHoldings('${crypto.id}')" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600" title="Update Holdings"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button onclick="removeCoin('${crypto.id}')" class="ml-2 bg-red-500 text-white p-2 rounded hover:bg-red-600" title="Remove Coin"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div></td>
                 `;
                 tbody.appendChild(row);
             });
-
-            // Update the total predicted value in the footer
-            document.getElementById('totalPredictedValue').textContent = `$${formatPrice(totalPredictedValue)}`;
+            document.getElementById('totalPredictedValue').textContent = `$${formatPrice(calculateTotalPredictedValue())}`;
         }
 
-        // Function to format prices, showing more decimals for small values
         function formatPrice(price) {
-            if (price < 0.0001) {
-                return price.toFixed(8);
-            } else if (price < 0.01) {
-                return price.toFixed(6);
-            } else if (price < 1) {
-                return price.toFixed(4);
-            } else {
-                return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
+            if (price >= 1000) return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (price >= 1) return price.toFixed(2);
+            if (price >= 0.001) return price.toFixed(4);
+            return price.toPrecision(4);
         }
 
         function updateHoldings(cryptoId) {
@@ -428,12 +378,10 @@
             if (!isNaN(amount) && amount >= 0) {
                 portfolio[cryptoId] = amount;
                 savePortfolio();
-                renderTable();
-                updatePortfolioValue();
-                updateChart();
-                updateProgressBar();
+                updateUI();
+                inputElement.value = '';
             } else {
-                alert('Please enter a valid number');
+                alert('Please enter a valid number.');
             }
         }
 
@@ -443,20 +391,20 @@
             if (!isNaN(target) && target > 0) {
                 targetPrices[cryptoId] = target;
                 saveTargetPrices();
-                renderTable(); // Re-render to update predicted value and market cap
+                renderTable(); // Only need to re-render table for this
+            } else if (inputElement.value === '') { // Allow clearing the target
+                delete targetPrices[cryptoId];
+                saveTargetPrices();
+                renderTable();
             } else {
-                alert('Please enter a valid target price');
+                alert('Please enter a valid target price.');
             }
         }
 
         function updatePortfolioValue() {
             const totalValue = calculateTotalValue();
             const totalValueElement = document.getElementById('totalValue');
-            if (isTotalValueHidden) {
-                totalValueElement.textContent = '****';
-            } else {
-                totalValueElement.textContent = `$${formatPrice(totalValue)}`;
-            }
+            totalValueElement.textContent = isTotalValueHidden ? '****' : `$${formatPrice(totalValue)}`;
         }
 
         function updateChart() {
@@ -466,31 +414,34 @@
                 value: (portfolio[crypto.id] || 0) * crypto.current_price
             })).filter(item => item.value > 0);
 
-            if (chart) {
-                chart.destroy();
-            }
+            if (chart) chart.destroy();
 
             chart = new Chart(ctx, {
-                type: 'pie',
+                type: 'doughnut', // Changed to doughnut
                 data: {
                     labels: data.map(item => item.name),
                     datasets: [{
                         data: data.map(item => item.value),
-                        backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-                            '#FF9F40', '#FF6384', '#C9CBCF', '#7BC225', '#36A2EB'
-                        ]
+                        backgroundColor: ['#6366F1', '#EC4899', '#22D3EE', '#F59E0B', '#84CC16', '#EF4444', '#14B8A6', '#A855F7'],
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: 'top',
+                            labels: {
+                                color: '#E5E7EB', // Lighter legend text
+                                font: { size: 14 }
+                            }
                         },
                         title: {
                             display: true,
-                            text: 'Portfolio Distribution'
+                            text: 'Portfolio Distribution',
+                            color: '#FFFFFF', // White title
+                            font: { size: 18, weight: '600' }
                         }
                     }
                 }
