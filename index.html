@@ -86,6 +86,9 @@
                         <div class="flex items-center mt-2">
                             <input type="number" id="targetValue" value="1000000" class="w-32 px-2 py-1 border rounded mr-2">
                             <button onclick="updateTarget('usd')" class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition">Set Target</button>
+                            <button onclick="toggleTargetValue('usd')" class="ml-2 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
+                                Show
+                            </button>
                         </div>
                         <div class="mt-4">
                             <div class="relative pt-1">
@@ -114,6 +117,9 @@
                         <div class="flex items-center mt-2">
                             <input type="number" id="targetValueBtc" value="10" step="0.00000001" class="w-32 px-2 py-1 border rounded mr-2">
                             <button onclick="updateTarget('btc')" class="bg-orange-500 text-white px-3 py-1 rounded-md hover:bg-orange-600 transition">Set Target</button>
+                            <button onclick="toggleTargetValue('btc')" class="ml-2 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
+                                Show
+                            </button>
                         </div>
                         <div class="mt-4">
                             <div class="relative pt-1">
@@ -198,6 +204,8 @@
         let targetValueBtc = 10;
         let isTotalValueHidden = true;
         let isTotalValueBtcHidden = true;
+        let isTargetValueHidden = true;
+        let isTargetValueBtcHidden = true;
         const REFRESH_INTERVAL = 60000; // 60 seconds
 
         window.onload = function() {
@@ -265,6 +273,40 @@
             updatePortfolioValue();
         }
 
+        function toggleTargetValue(currency) {
+            if (currency === 'usd') {
+                isTargetValueHidden = !isTargetValueHidden;
+                const targetInput = document.getElementById('targetValue');
+                const toggleButton = document.querySelector('#usdView button[onclick="toggleTargetValue(\'usd\')"]');
+                
+                if (isTargetValueHidden) {
+                    targetInput.type = 'password';
+                    targetInput.value = targetInput.value.replace(/./g, '*');
+                    toggleButton.textContent = 'Show';
+                } else {
+                    targetInput.type = 'number';
+                    targetInput.value = targetValue;
+                    toggleButton.textContent = 'Hide';
+                }
+                localStorage.setItem('isTargetValueHidden', isTargetValueHidden);
+            } else {
+                isTargetValueBtcHidden = !isTargetValueBtcHidden;
+                const targetInput = document.getElementById('targetValueBtc');
+                const toggleButton = document.querySelector('#btcView button[onclick="toggleTargetValue(\'btc\')"]');
+                
+                if (isTargetValueBtcHidden) {
+                    targetInput.type = 'password';
+                    targetInput.value = targetInput.value.replace(/./g, '*');
+                    toggleButton.textContent = 'Show';
+                } else {
+                    targetInput.type = 'number';
+                    targetInput.value = targetValueBtc;
+                    toggleButton.textContent = 'Hide';
+                }
+                localStorage.setItem('isTargetValueBtcHidden', isTargetValueBtcHidden);
+            }
+        }
+
         function loadTarget() {
             const savedTarget = localStorage.getItem('targetValue');
             if (savedTarget) {
@@ -277,18 +319,55 @@
                 targetValueBtc = parseFloat(savedTargetBtc);
                 document.getElementById('targetValueBtc').value = targetValueBtc;
             }
+
+            // Load target visibility preferences
+            const savedTargetHidden = localStorage.getItem('isTargetValueHidden');
+            if (savedTargetHidden !== null) {
+                isTargetValueHidden = savedTargetHidden === 'true';
+                if (isTargetValueHidden) {
+                    const targetInput = document.getElementById('targetValue');
+                    const toggleButton = document.querySelector('#usdView button[onclick="toggleTargetValue(\'usd\')"]');
+                    targetInput.type = 'password';
+                    targetInput.value = targetInput.value.replace(/./g, '*');
+                    toggleButton.textContent = 'Show';
+                }
+            }
+
+            const savedTargetBtcHidden = localStorage.getItem('isTargetValueBtcHidden');
+            if (savedTargetBtcHidden !== null) {
+                isTargetValueBtcHidden = savedTargetBtcHidden === 'true';
+                if (isTargetValueBtcHidden) {
+                    const targetInput = document.getElementById('targetValueBtc');
+                    const toggleButton = document.querySelector('#btcView button[onclick="toggleTargetValue(\'btc\')"]');
+                    targetInput.type = 'password';
+                    targetInput.value = targetInput.value.replace(/./g, '*');
+                    toggleButton.textContent = 'Show';
+                }
+            }
         }
 
         function updateTarget(currency) {
             if (currency === 'usd') {
-                const newTarget = parseFloat(document.getElementById('targetValue').value);
+                let inputValue = document.getElementById('targetValue').value;
+                // If the input is hidden (showing asterisks), don't try to parse it
+                if (isTargetValueHidden && inputValue.includes('*')) {
+                    alert('Please show the target value first before updating it.');
+                    return;
+                }
+                const newTarget = parseFloat(inputValue);
                 if (!isNaN(newTarget) && newTarget > 0) {
                     targetValue = newTarget;
                     localStorage.setItem('targetValue', targetValue);
                     updateProgressBar();
                 }
             } else {
-                const newTarget = parseFloat(document.getElementById('targetValueBtc').value);
+                let inputValue = document.getElementById('targetValueBtc').value;
+                // If the input is hidden (showing asterisks), don't try to parse it
+                if (isTargetValueBtcHidden && inputValue.includes('*')) {
+                    alert('Please show the target value first before updating it.');
+                    return;
+                }
+                const newTarget = parseFloat(inputValue);
                 if (!isNaN(newTarget) && newTarget > 0) {
                     targetValueBtc = newTarget;
                     localStorage.setItem('targetValueBtc', targetValueBtc);
@@ -316,7 +395,7 @@
         }
 
         async function initializeDefaultCryptos() {
-            const defaultCryptos = ['bitcoin', 'pepe', 'hyperliquid'];
+            const defaultCryptos = ['bitcoin', 'hyperliquid'];
             const savedCoins = loadAddedCoins();
             // Use Set to ensure unique coin IDs
             const uniqueCoinIds = new Set([...defaultCryptos, ...savedCoins]);
