@@ -64,30 +64,71 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div id="portfolioSummary" class="glass-card rounded-xl shadow-2xl p-6">
                 <h2 class="text-2xl font-semibold mb-4 text-white">Your Portfolio</h2>
-                <div class="flex items-center justify-center">
-                    <p id="totalValue" class="text-3xl font-bold text-green-400">$0.00</p>
-                    <button onclick="toggleTotalValue()" class="ml-4 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
-                        Show
-                    </button>
+                
+                <!-- Currency Toggle -->
+                <div class="flex justify-center mb-4">
+                    <div class="bg-gray-700/50 rounded-lg p-1 flex">
+                        <button id="usdToggle" onclick="toggleCurrency('usd')" class="px-4 py-2 rounded-md bg-blue-500 text-white transition">USD</button>
+                        <button id="btcToggle" onclick="toggleCurrency('btc')" class="px-4 py-2 rounded-md text-gray-300 transition">BTC</button>
+                    </div>
                 </div>
-                <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-200">Target Value:</label>
-                    <div class="flex items-center mt-2">
-                        <input type="number" id="targetValue" value="1000000" class="w-32 px-2 py-1 border rounded mr-2">
-                        <button onclick="updateTarget()" class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition">Set Target</button>
+                
+                <!-- USD View -->
+                <div id="usdView">
+                    <div class="flex items-center justify-center">
+                        <p id="totalValue" class="text-3xl font-bold text-green-400">$0.00</p>
+                        <button onclick="toggleTotalValue()" class="ml-4 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
+                            Show
+                        </button>
                     </div>
                     <div class="mt-4">
-                        <div class="relative pt-1">
-                            <div class="flex mb-2 items-center justify-between">
-                                <div><span id="progressPercentage" class="text-xs font-semibold inline-block text-blue-300">0%</span></div>
-                                <div class="text-right"><span id="remainingValue" class="text-xs font-semibold inline-block text-blue-300">Remaining: $0</span></div>
-                            </div>
-                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200/50">
-                                <div id="progressBar" class="progress-bar shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500" style="width: 0%"></div>
+                        <label class="block text-sm font-medium text-gray-200">USD Target Value:</label>
+                        <div class="flex items-center mt-2">
+                            <input type="number" id="targetValue" value="1000000" class="w-32 px-2 py-1 border rounded mr-2">
+                            <button onclick="updateTarget('usd')" class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition">Set Target</button>
+                        </div>
+                        <div class="mt-4">
+                            <div class="relative pt-1">
+                                <div class="flex mb-2 items-center justify-between">
+                                    <div><span id="progressPercentage" class="text-xs font-semibold inline-block text-blue-300">0%</span></div>
+                                    <div class="text-right"><span id="remainingValue" class="text-xs font-semibold inline-block text-blue-300">Remaining: $0</span></div>
+                                </div>
+                                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200/50">
+                                    <div id="progressBar" class="progress-bar shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500" style="width: 0%"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- BTC View -->
+                <div id="btcView" class="hidden">
+                    <div class="flex items-center justify-center">
+                        <p id="totalValueBtc" class="text-3xl font-bold text-orange-400">₿0.00000000</p>
+                        <button onclick="toggleTotalValueBtc()" class="ml-4 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
+                            Show
+                        </button>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-200">BTC Target Value:</label>
+                        <div class="flex items-center mt-2">
+                            <input type="number" id="targetValueBtc" value="10" step="0.00000001" class="w-32 px-2 py-1 border rounded mr-2">
+                            <button onclick="updateTarget('btc')" class="bg-orange-500 text-white px-3 py-1 rounded-md hover:bg-orange-600 transition">Set Target</button>
+                        </div>
+                        <div class="mt-4">
+                            <div class="relative pt-1">
+                                <div class="flex mb-2 items-center justify-between">
+                                    <div><span id="progressPercentageBtc" class="text-xs font-semibold inline-block text-orange-300">0%</span></div>
+                                    <div class="text-right"><span id="remainingValueBtc" class="text-xs font-semibold inline-block text-orange-300">Remaining: ₿0</span></div>
+                                </div>
+                                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-orange-200/50">
+                                    <div id="progressBarBtc" class="progress-bar shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-orange-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                  <div class="flex items-center mt-4">
                     <button onclick="manualRefresh()" id="refreshButton" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition flex items-center">
                         <svg id="refreshSpinner" class="spinner h-5 w-5 mr-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.95-4.95l.05.05M20 15a9 9 0 01-14.95 4.95l-.05-.05"></path></svg>
@@ -114,18 +155,20 @@
                     <tr>
                         <th class="py-3 px-4 text-left rounded-tl-lg">Name</th>
                         <th class="py-3 px-4 text-left">Price (USD)</th>
+                        <th class="py-3 px-4 text-left">Price (BTC)</th>
                         <th class="py-3 px-4 text-left">24h Change</th>
                         <th class="py-3 px-4 text-left">Holdings</th>
+                        <th class="py-3 px-4 text-left">Value (USD)</th>
+                        <th class="py-3 px-4 text-left">Value (BTC)</th>
                         <th class="py-3 px-4 text-left">Portfolio %</th>
                         <th class="py-3 px-4 text-left">Target Price</th>
                         <th class="py-3 px-4 text-left">Predicted Value</th>
-                        <th class="py-3 px-4 text-left">Predicted Mkt Cap</th>
                         <th class="py-3 px-4 text-left rounded-tr-lg">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="cryptoTableBody">
                     <tr>
-                        <td colspan="9" class="text-center py-10">
+                        <td colspan="11" class="text-center py-10">
                              <div class="flex justify-center items-center">
                                 <svg class="spinner h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.95-4.95l.05.05M20 15a9 9 0 01-14.95 4.95l-.05-.05"></path></svg>
                                 <span class="ml-4 text-lg">Loading Initial Data...</span>
@@ -135,7 +178,7 @@
                 </tbody>
                 <tfoot class="text-gray-300">
                     <tr>
-                        <td colspan="5" class="py-3 px-4 text-right font-semibold">Total Predicted Value:</td>
+                        <td colspan="7" class="py-3 px-4 text-right font-semibold">Total Predicted Value:</td>
                         <td colspan="2" class="py-3 px-4 font-semibold" id="totalPredictedValue">$0.00</td>
                         <td></td>
                         <td></td>
@@ -152,7 +195,9 @@
         let targetPrices = {};
         let chart;
         let targetValue = 1000000;
+        let targetValueBtc = 10;
         let isTotalValueHidden = true;
+        let isTotalValueBtcHidden = true;
         const REFRESH_INTERVAL = 60000; // 60 seconds
 
         window.onload = function() {
@@ -189,20 +234,66 @@
             updatePortfolioValue();
         }
 
+        function toggleTotalValueBtc() {
+            isTotalValueBtcHidden = !isTotalValueBtcHidden;
+            const toggleButton = document.querySelector('#btcView button');
+            toggleButton.textContent = isTotalValueBtcHidden ? 'Show' : 'Hide';
+            updatePortfolioValue();
+        }
+
+        function toggleCurrency(currency) {
+            const usdView = document.getElementById('usdView');
+            const btcView = document.getElementById('btcView');
+            const usdToggle = document.getElementById('usdToggle');
+            const btcToggle = document.getElementById('btcToggle');
+
+            if (currency === 'usd') {
+                usdView.classList.remove('hidden');
+                btcView.classList.add('hidden');
+                usdToggle.classList.add('bg-blue-500', 'text-white');
+                usdToggle.classList.remove('text-gray-300');
+                btcToggle.classList.remove('bg-orange-500', 'text-white');
+                btcToggle.classList.add('text-gray-300');
+            } else {
+                btcView.classList.remove('hidden');
+                usdView.classList.add('hidden');
+                btcToggle.classList.add('bg-orange-500', 'text-white');
+                btcToggle.classList.remove('text-gray-300');
+                usdToggle.classList.remove('bg-blue-500', 'text-white');
+                usdToggle.classList.add('text-gray-300');
+            }
+            updatePortfolioValue();
+        }
+
         function loadTarget() {
             const savedTarget = localStorage.getItem('targetValue');
             if (savedTarget) {
                 targetValue = parseFloat(savedTarget);
                 document.getElementById('targetValue').value = targetValue;
             }
+            
+            const savedTargetBtc = localStorage.getItem('targetValueBtc');
+            if (savedTargetBtc) {
+                targetValueBtc = parseFloat(savedTargetBtc);
+                document.getElementById('targetValueBtc').value = targetValueBtc;
+            }
         }
 
-        function updateTarget() {
-            const newTarget = parseFloat(document.getElementById('targetValue').value);
-            if (!isNaN(newTarget) && newTarget > 0) {
-                targetValue = newTarget;
-                localStorage.setItem('targetValue', targetValue);
-                updateProgressBar();
+        function updateTarget(currency) {
+            if (currency === 'usd') {
+                const newTarget = parseFloat(document.getElementById('targetValue').value);
+                if (!isNaN(newTarget) && newTarget > 0) {
+                    targetValue = newTarget;
+                    localStorage.setItem('targetValue', targetValue);
+                    updateProgressBar();
+                }
+            } else {
+                const newTarget = parseFloat(document.getElementById('targetValueBtc').value);
+                if (!isNaN(newTarget) && newTarget > 0) {
+                    targetValueBtc = newTarget;
+                    localStorage.setItem('targetValueBtc', targetValueBtc);
+                    updateProgressBarBtc();
+                }
             }
         }
 
@@ -213,6 +304,15 @@
             document.getElementById('progressBar').style.width = `${Math.min(100, percentage)}%`;
             document.getElementById('progressPercentage').textContent = `${percentage.toFixed(2)}%`;
             document.getElementById('remainingValue').textContent = `Remaining: $${remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        function updateProgressBarBtc() {
+            const totalValueBtc = calculateTotalValueInBtc();
+            const percentage = (totalValueBtc / targetValueBtc) * 100;
+            const remaining = targetValueBtc > totalValueBtc ? targetValueBtc - totalValueBtc : 0;
+            document.getElementById('progressBarBtc').style.width = `${Math.min(100, percentage)}%`;
+            document.getElementById('progressPercentageBtc').textContent = `${percentage.toFixed(2)}%`;
+            document.getElementById('remainingValueBtc').textContent = `Remaining: ₿${formatBtc(remaining)}`;
         }
 
         async function initializeDefaultCryptos() {
@@ -231,7 +331,7 @@
                 document.querySelector('#portfolioSummary button').textContent = 'Show';
             } catch (error) {
                 console.error('Failed to initialize cryptocurrencies:', error);
-                document.getElementById('cryptoTableBody').innerHTML = `<td colspan="9" class="text-center text-red-400 py-10">Failed to load coin data. Please check your connection and refresh.</td>`;
+                document.getElementById('cryptoTableBody').innerHTML = `<td colspan="11" class="text-center text-red-400 py-10">Failed to load coin data. Please check your connection and refresh.</td>`;
             }
         }
 
@@ -268,6 +368,20 @@
 
         const calculateTotalValue = () => cryptoData.reduce((total, crypto) => total + (portfolio[crypto.id] || 0) * crypto.current_price, 0);
         const calculateTotalPredictedValue = () => cryptoData.reduce((sum, crypto) => sum + (portfolio[crypto.id] || 0) * (targetPrices[crypto.id] || crypto.current_price), 0);
+        
+        const getBtcPrice = () => {
+            const btcCoin = cryptoData.find(crypto => crypto.id === 'bitcoin');
+            return btcCoin ? btcCoin.current_price : 0;
+        };
+        
+        const calculateTotalValueInBtc = () => {
+            const btcPrice = getBtcPrice();
+            return btcPrice > 0 ? calculateTotalValue() / btcPrice : 0;
+        };
+        
+        const formatBtc = (btcAmount) => {
+            return btcAmount.toFixed(8);
+        };
         
         function manualRefresh() {
              refreshPrices();
@@ -326,25 +440,28 @@
             updatePortfolioValue();
             updateChart();
             updateProgressBar();
+            updateProgressBarBtc();
         }
 
         function renderTable() {
             const tbody = document.getElementById('cryptoTableBody');
             if (cryptoData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-10">Your portfolio is empty. Add a coin to get started!</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" class="text-center py-10">Your portfolio is empty. Add a coin to get started!</td></tr>`;
                 return;
             }
             tbody.innerHTML = ''; 
 
             const totalValue = calculateTotalValue();
+            const btcPrice = getBtcPrice();
 
             cryptoData.forEach(crypto => {
                 const holdings = portfolio[crypto.id] || 0;
                 const value = holdings * crypto.current_price;
+                const valueBtc = btcPrice > 0 ? value / btcPrice : 0;
+                const priceBtc = btcPrice > 0 ? crypto.current_price / btcPrice : 0;
                 const percentage = totalValue > 0 ? (value / totalValue * 100).toFixed(2) : '0.00';
                 const targetPrice = targetPrices[crypto.id] || '';
                 const predictedValue = holdings * (targetPrice || crypto.current_price);
-                const predictedMarketCap = (targetPrice || crypto.current_price) * crypto.circulating_supply;
                 const change_24h = crypto.price_change_percentage_24h || 0;
 
                 const row = document.createElement('tr');
@@ -352,12 +469,14 @@
                 row.innerHTML = `
                     <td class="py-4 px-4"><div class="flex items-center"><img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8 mr-3 rounded-full"><div class="font-medium">${crypto.name}<div class="text-sm text-gray-400">${crypto.symbol.toUpperCase()}</div></div></div></td>
                     <td class="py-4 px-4 font-semibold">$${formatPrice(crypto.current_price)}</td>
+                    <td class="py-4 px-4 font-semibold text-orange-400">₿${formatBtc(priceBtc)}</td>
                     <td class="py-4 px-4"><span class="px-2 py-1 text-sm rounded ${change_24h >= 0 ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}">${change_24h >= 0 ? '▲' : '▼'} ${Math.abs(change_24h).toFixed(2)}%</span></td>
                     <td class="py-4 px-4">${holdings.toLocaleString()}</td>
+                    <td class="py-4 px-4">$${formatPrice(value)}</td>
+                    <td class="py-4 px-4 text-orange-400">₿${formatBtc(valueBtc)}</td>
                     <td class="py-4 px-4">${percentage}%</td>
                     <td class="py-4 px-4"><div class="flex items-center"><input type="number" step="any" id="target-${crypto.id}" value="${targetPrice}" placeholder="e.g., 80000" class="w-24 px-2 py-1 border rounded mr-2"><button onclick="updateTargetPrice('${crypto.id}')" class="bg-purple-500 text-white p-1 rounded hover:bg-purple-600 text-xs" title="Set Target Price">✔️</button></div></td>
                     <td class="py-4 px-4">$${formatPrice(predictedValue)}</td>
-                    <td class="py-4 px-4">$${formatPrice(predictedMarketCap)}</td>
                     <td class="py-4 px-4"><div class="flex items-center"><input type="number" step="any" id="input-${crypto.id}" placeholder="Amount" class="w-20 px-2 py-1 border rounded mr-2"><button onclick="updateHoldings('${crypto.id}')" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600" title="Update Holdings"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button onclick="removeCoin('${crypto.id}')" class="ml-2 bg-red-500 text-white p-2 rounded hover:bg-red-600" title="Remove Coin"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div></td>
                 `;
                 tbody.appendChild(row);
@@ -405,6 +524,10 @@
             const totalValue = calculateTotalValue();
             const totalValueElement = document.getElementById('totalValue');
             totalValueElement.textContent = isTotalValueHidden ? '****' : `$${formatPrice(totalValue)}`;
+            
+            const totalValueBtc = calculateTotalValueInBtc();
+            const totalValueBtcElement = document.getElementById('totalValueBtc');
+            totalValueBtcElement.textContent = isTotalValueBtcHidden ? '****' : `₿${formatBtc(totalValueBtc)}`;
         }
 
         function updateChart() {
