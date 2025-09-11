@@ -68,9 +68,15 @@
                 <!-- Currency Toggle -->
                 <div class="flex justify-center mb-4">
                     <div class="bg-gray-700/50 rounded-lg p-1 flex">
-                        <button id="usdToggle" onclick="toggleCurrency('usd')" class="px-4 py-2 rounded-md bg-blue-500 text-white transition">USD</button>
-                        <button id="btcToggle" onclick="toggleCurrency('btc')" class="px-4 py-2 rounded-md text-gray-300 transition">BTC</button>
+                        <button id="usdToggle" onclick="toggleCurrency('usd')" class="px-3 py-2 rounded-md bg-blue-500 text-white transition text-sm">USD</button>
+                        <button id="btcToggle" onclick="toggleCurrency('btc')" class="px-3 py-2 rounded-md text-gray-300 transition text-sm">BTC</button>
+                        <button id="vndToggle" onclick="toggleCurrency('vnd')" class="px-3 py-2 rounded-md text-gray-300 transition text-sm">VND</button>
                     </div>
+                </div>
+                
+                <!-- Exchange Rate Display -->
+                <div class="text-center mb-4">
+                    <p id="exchangeRate" class="text-sm text-gray-300">1 USD = ₫24,000 VND</p>
                 </div>
                 
                 <!-- USD View -->
@@ -135,6 +141,37 @@
                     </div>
                 </div>
                 
+                <!-- VND View -->
+                <div id="vndView" class="hidden">
+                    <div class="flex items-center justify-center">
+                        <p id="totalValueVnd" class="text-3xl font-bold text-green-400">₫0</p>
+                        <button onclick="toggleTotalValueVnd()" class="ml-4 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
+                            Show
+                        </button>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-200">VND Target Value:</label>
+                        <div class="flex items-center mt-2">
+                            <input type="number" id="targetValueVnd" value="25000000000" step="1000000" class="w-40 px-2 py-1 border rounded mr-2">
+                            <button onclick="updateTarget('vnd')" class="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 transition">Set Target</button>
+                            <button onclick="toggleTargetValue('vnd')" class="ml-2 bg-gray-500/50 text-white px-2 py-1 rounded-md hover:bg-gray-400/50 transition">
+                                Show
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <div class="relative pt-1">
+                                <div class="flex mb-2 items-center justify-between">
+                                    <div><span id="progressPercentageVnd" class="text-xs font-semibold inline-block text-green-300">0%</span></div>
+                                    <div class="text-right"><span id="remainingValueVnd" class="text-xs font-semibold inline-block text-green-300">Remaining: ₫0</span></div>
+                                </div>
+                                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-200/50">
+                                    <div id="progressBarVnd" class="progress-bar shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                  <div class="flex items-center mt-4">
                     <button onclick="manualRefresh()" id="refreshButton" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition flex items-center">
                         <svg id="refreshSpinner" class="spinner h-5 w-5 mr-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.95-4.95l.05.05M20 15a9 9 0 01-14.95 4.95l-.05-.05"></path></svg>
@@ -162,10 +199,12 @@
                         <th class="py-3 px-4 text-left rounded-tl-lg">Name</th>
                         <th class="py-3 px-4 text-left">Price (USD)</th>
                         <th class="py-3 px-4 text-left">Price (BTC)</th>
+                        <th class="py-3 px-4 text-left">Price (VND)</th>
                         <th class="py-3 px-4 text-left">24h Change</th>
                         <th class="py-3 px-4 text-left">Holdings</th>
                         <th class="py-3 px-4 text-left">Value (USD)</th>
                         <th class="py-3 px-4 text-left">Value (BTC)</th>
+                        <th class="py-3 px-4 text-left">Value (VND)</th>
                         <th class="py-3 px-4 text-left">Portfolio %</th>
                         <th class="py-3 px-4 text-left">Target Price</th>
                         <th class="py-3 px-4 text-left">Predicted Value</th>
@@ -174,7 +213,7 @@
                 </thead>
                 <tbody id="cryptoTableBody">
                     <tr>
-                        <td colspan="11" class="text-center py-10">
+                        <td colspan="12" class="text-center py-10">
                              <div class="flex justify-center items-center">
                                 <svg class="spinner h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.95-4.95l.05.05M20 15a9 9 0 01-14.95 4.95l-.05-.05"></path></svg>
                                 <span class="ml-4 text-lg">Loading Initial Data...</span>
@@ -184,7 +223,7 @@
                 </tbody>
                 <tfoot class="text-gray-300">
                     <tr>
-                        <td colspan="7" class="py-3 px-4 text-right font-semibold">Total Predicted Value:</td>
+                        <td colspan="9" class="py-3 px-4 text-right font-semibold">Total Predicted Value:</td>
                         <td colspan="2" class="py-3 px-4 font-semibold" id="totalPredictedValue">$0.00</td>
                         <td></td>
                         <td></td>
@@ -202,18 +241,24 @@
         let chart;
         let targetValue = 1000000;
         let targetValueBtc = 10;
+        let targetValueVnd = 25000000000; // 25 billion VND
+        let usdToVndRate = 24000; // Default rate, will be updated
         let isTotalValueHidden = true;
         let isTotalValueBtcHidden = true;
+        let isTotalValueVndHidden = true;
         let isTargetValueHidden = true;
         let isTargetValueBtcHidden = true;
+        let isTargetValueVndHidden = true;
         const REFRESH_INTERVAL = 60000; // 60 seconds
 
         window.onload = function() {
             loadPortfolio();
             loadTarget();
             loadTargetPrices();
+            fetchExchangeRate(); // Fetch USD to VND exchange rate
             initializeDefaultCryptos(); // This will load saved coins as well
             setInterval(refreshPrices, REFRESH_INTERVAL); // Auto-refresh prices
+            setInterval(fetchExchangeRate, 300000); // Refresh exchange rate every 5 minutes
         };
 
         function loadAddedCoins() {
@@ -249,26 +294,46 @@
             updatePortfolioValue();
         }
 
+        function toggleTotalValueVnd() {
+            isTotalValueVndHidden = !isTotalValueVndHidden;
+            const toggleButton = document.querySelector('#vndView button');
+            toggleButton.textContent = isTotalValueVndHidden ? 'Show' : 'Hide';
+            updatePortfolioValue();
+        }
+
         function toggleCurrency(currency) {
             const usdView = document.getElementById('usdView');
             const btcView = document.getElementById('btcView');
+            const vndView = document.getElementById('vndView');
             const usdToggle = document.getElementById('usdToggle');
             const btcToggle = document.getElementById('btcToggle');
+            const vndToggle = document.getElementById('vndToggle');
+
+            // Hide all views first
+            usdView.classList.add('hidden');
+            btcView.classList.add('hidden');
+            vndView.classList.add('hidden');
+            
+            // Reset all toggle buttons
+            usdToggle.classList.remove('bg-blue-500', 'text-white');
+            usdToggle.classList.add('text-gray-300');
+            btcToggle.classList.remove('bg-orange-500', 'text-white');
+            btcToggle.classList.add('text-gray-300');
+            vndToggle.classList.remove('bg-green-500', 'text-white');
+            vndToggle.classList.add('text-gray-300');
 
             if (currency === 'usd') {
                 usdView.classList.remove('hidden');
-                btcView.classList.add('hidden');
                 usdToggle.classList.add('bg-blue-500', 'text-white');
                 usdToggle.classList.remove('text-gray-300');
-                btcToggle.classList.remove('bg-orange-500', 'text-white');
-                btcToggle.classList.add('text-gray-300');
-            } else {
+            } else if (currency === 'btc') {
                 btcView.classList.remove('hidden');
-                usdView.classList.add('hidden');
                 btcToggle.classList.add('bg-orange-500', 'text-white');
                 btcToggle.classList.remove('text-gray-300');
-                usdToggle.classList.remove('bg-blue-500', 'text-white');
-                usdToggle.classList.add('text-gray-300');
+            } else if (currency === 'vnd') {
+                vndView.classList.remove('hidden');
+                vndToggle.classList.add('bg-green-500', 'text-white');
+                vndToggle.classList.remove('text-gray-300');
             }
             updatePortfolioValue();
         }
@@ -289,7 +354,7 @@
                     toggleButton.textContent = 'Hide';
                 }
                 localStorage.setItem('isTargetValueHidden', isTargetValueHidden);
-            } else {
+            } else if (currency === 'btc') {
                 isTargetValueBtcHidden = !isTargetValueBtcHidden;
                 const targetInput = document.getElementById('targetValueBtc');
                 const toggleButton = document.querySelector('#btcView button[onclick="toggleTargetValue(\'btc\')"]');
@@ -304,6 +369,21 @@
                     toggleButton.textContent = 'Hide';
                 }
                 localStorage.setItem('isTargetValueBtcHidden', isTargetValueBtcHidden);
+            } else if (currency === 'vnd') {
+                isTargetValueVndHidden = !isTargetValueVndHidden;
+                const targetInput = document.getElementById('targetValueVnd');
+                const toggleButton = document.querySelector('#vndView button[onclick="toggleTargetValue(\'vnd\')"]');
+                
+                if (isTargetValueVndHidden) {
+                    targetInput.type = 'password';
+                    targetInput.value = targetInput.value.replace(/./g, '*');
+                    toggleButton.textContent = 'Show';
+                } else {
+                    targetInput.type = 'number';
+                    targetInput.value = targetValueVnd;
+                    toggleButton.textContent = 'Hide';
+                }
+                localStorage.setItem('isTargetValueVndHidden', isTargetValueVndHidden);
             }
         }
 
@@ -318,6 +398,12 @@
             if (savedTargetBtc) {
                 targetValueBtc = parseFloat(savedTargetBtc);
                 document.getElementById('targetValueBtc').value = targetValueBtc;
+            }
+            
+            const savedTargetVnd = localStorage.getItem('targetValueVnd');
+            if (savedTargetVnd) {
+                targetValueVnd = parseFloat(savedTargetVnd);
+                document.getElementById('targetValueVnd').value = targetValueVnd;
             }
 
             // Load target visibility preferences
@@ -344,6 +430,18 @@
                     toggleButton.textContent = 'Show';
                 }
             }
+
+            const savedTargetVndHidden = localStorage.getItem('isTargetValueVndHidden');
+            if (savedTargetVndHidden !== null) {
+                isTargetValueVndHidden = savedTargetVndHidden === 'true';
+                if (isTargetValueVndHidden) {
+                    const targetInput = document.getElementById('targetValueVnd');
+                    const toggleButton = document.querySelector('#vndView button[onclick="toggleTargetValue(\'vnd\')"]');
+                    targetInput.type = 'password';
+                    targetInput.value = targetInput.value.replace(/./g, '*');
+                    toggleButton.textContent = 'Show';
+                }
+            }
         }
 
         function updateTarget(currency) {
@@ -360,7 +458,7 @@
                     localStorage.setItem('targetValue', targetValue);
                     updateProgressBar();
                 }
-            } else {
+            } else if (currency === 'btc') {
                 let inputValue = document.getElementById('targetValueBtc').value;
                 // If the input is hidden (showing asterisks), don't try to parse it
                 if (isTargetValueBtcHidden && inputValue.includes('*')) {
@@ -372,6 +470,19 @@
                     targetValueBtc = newTarget;
                     localStorage.setItem('targetValueBtc', targetValueBtc);
                     updateProgressBarBtc();
+                }
+            } else if (currency === 'vnd') {
+                let inputValue = document.getElementById('targetValueVnd').value;
+                // If the input is hidden (showing asterisks), don't try to parse it
+                if (isTargetValueVndHidden && inputValue.includes('*')) {
+                    alert('Please show the target value first before updating it.');
+                    return;
+                }
+                const newTarget = parseFloat(inputValue);
+                if (!isNaN(newTarget) && newTarget > 0) {
+                    targetValueVnd = newTarget;
+                    localStorage.setItem('targetValueVnd', targetValueVnd);
+                    updateProgressBarVnd();
                 }
             }
         }
@@ -392,6 +503,15 @@
             document.getElementById('progressBarBtc').style.width = `${Math.min(100, percentage)}%`;
             document.getElementById('progressPercentageBtc').textContent = `${percentage.toFixed(2)}%`;
             document.getElementById('remainingValueBtc').textContent = `Remaining: ₿${formatBtc(remaining)}`;
+        }
+
+        function updateProgressBarVnd() {
+            const totalValueVnd = calculateTotalValueInVnd();
+            const percentage = (totalValueVnd / targetValueVnd) * 100;
+            const remaining = targetValueVnd > totalValueVnd ? targetValueVnd - totalValueVnd : 0;
+            document.getElementById('progressBarVnd').style.width = `${Math.min(100, percentage)}%`;
+            document.getElementById('progressPercentageVnd').textContent = `${percentage.toFixed(2)}%`;
+            document.getElementById('remainingValueVnd').textContent = `Remaining: ₫${formatVnd(remaining)}`;
         }
 
         async function initializeDefaultCryptos() {
@@ -462,6 +582,30 @@
             return btcAmount.toFixed(8);
         };
         
+        const calculateTotalValueInVnd = () => {
+            const totalUsdValue = calculateTotalValue();
+            return totalUsdValue * usdToVndRate;
+        };
+        
+        const formatVnd = (vndAmount) => {
+            return vndAmount.toLocaleString('vi-VN');
+        };
+        
+        async function fetchExchangeRate() {
+            try {
+                const response = await axios.get('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = response.data;
+                if (data.rates && data.rates.VND) {
+                    usdToVndRate = data.rates.VND;
+                    document.getElementById('exchangeRate').textContent = `1 USD = ₫${formatVnd(usdToVndRate)} VND`;
+                    updateUI(); // Refresh VND values
+                }
+            } catch (error) {
+                console.error('Failed to fetch exchange rate:', error);
+                // Keep using the default rate
+            }
+        }
+
         function manualRefresh() {
              refreshPrices();
         }
@@ -520,12 +664,13 @@
             updateChart();
             updateProgressBar();
             updateProgressBarBtc();
+            updateProgressBarVnd();
         }
 
         function renderTable() {
             const tbody = document.getElementById('cryptoTableBody');
             if (cryptoData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" class="text-center py-10">Your portfolio is empty. Add a coin to get started!</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" class="text-center py-10">Your portfolio is empty. Add a coin to get started!</td></tr>`;
                 return;
             }
             tbody.innerHTML = ''; 
@@ -537,7 +682,9 @@
                 const holdings = portfolio[crypto.id] || 0;
                 const value = holdings * crypto.current_price;
                 const valueBtc = btcPrice > 0 ? value / btcPrice : 0;
+                const valueVnd = value * usdToVndRate;
                 const priceBtc = btcPrice > 0 ? crypto.current_price / btcPrice : 0;
+                const priceVnd = crypto.current_price * usdToVndRate;
                 const percentage = totalValue > 0 ? (value / totalValue * 100).toFixed(2) : '0.00';
                 const targetPrice = targetPrices[crypto.id] || '';
                 const predictedValue = holdings * (targetPrice || crypto.current_price);
@@ -549,10 +696,12 @@
                     <td class="py-4 px-4"><div class="flex items-center"><img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8 mr-3 rounded-full"><div class="font-medium">${crypto.name}<div class="text-sm text-gray-400">${crypto.symbol.toUpperCase()}</div></div></div></td>
                     <td class="py-4 px-4 font-semibold">$${formatPrice(crypto.current_price)}</td>
                     <td class="py-4 px-4 font-semibold text-orange-400">₿${formatBtc(priceBtc)}</td>
+                    <td class="py-4 px-4 font-semibold text-green-400">₫${formatVnd(priceVnd)}</td>
                     <td class="py-4 px-4"><span class="px-2 py-1 text-sm rounded ${change_24h >= 0 ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}">${change_24h >= 0 ? '▲' : '▼'} ${Math.abs(change_24h).toFixed(2)}%</span></td>
                     <td class="py-4 px-4">${holdings.toLocaleString()}</td>
                     <td class="py-4 px-4">$${formatPrice(value)}</td>
                     <td class="py-4 px-4 text-orange-400">₿${formatBtc(valueBtc)}</td>
+                    <td class="py-4 px-4 text-green-400">₫${formatVnd(valueVnd)}</td>
                     <td class="py-4 px-4">${percentage}%</td>
                     <td class="py-4 px-4"><div class="flex items-center"><input type="number" step="any" id="target-${crypto.id}" value="${targetPrice}" placeholder="e.g., 80000" class="w-24 px-2 py-1 border rounded mr-2"><button onclick="updateTargetPrice('${crypto.id}')" class="bg-purple-500 text-white p-1 rounded hover:bg-purple-600 text-xs" title="Set Target Price">✔️</button></div></td>
                     <td class="py-4 px-4">$${formatPrice(predictedValue)}</td>
@@ -607,6 +756,10 @@
             const totalValueBtc = calculateTotalValueInBtc();
             const totalValueBtcElement = document.getElementById('totalValueBtc');
             totalValueBtcElement.textContent = isTotalValueBtcHidden ? '****' : `₿${formatBtc(totalValueBtc)}`;
+            
+            const totalValueVnd = calculateTotalValueInVnd();
+            const totalValueVndElement = document.getElementById('totalValueVnd');
+            totalValueVndElement.textContent = isTotalValueVndHidden ? '****' : `₫${formatVnd(totalValueVnd)}`;
         }
 
         function updateChart() {
